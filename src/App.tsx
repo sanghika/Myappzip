@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { BrowserRouter, Routes, Route, Link, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from "react-router-dom";
 import { fetchRepositories, fetchUser, extractZip, uploadToGitHub, ExtractedFile } from "./lib/github";
 import { Github, LogOut, Upload, Loader2, CheckCircle, BookOpen, Archive, AlertCircle, FileArchive, X, ChevronDown, ChevronUp } from "lucide-react";
 
@@ -21,7 +21,7 @@ function Footer() {
         <span>&middot;</span>
         <Link to="/contact" className="hover:text-slate-600 transition-colors">Contact</Link>
       </div>
-      <p className="text-[11px] text-slate-400/80">© {new Date().getFullYear()} ZiptoGit. Created by Dipesh Nalawade.</p>
+      <p className="text-[11px] text-slate-400/80">Â© {new Date().getFullYear()} ZiptoGit. Created by Dipesh Nalawade.</p>
     </footer>
   );
 }
@@ -373,113 +373,108 @@ export function ZipUploader() {
   );
 }
 
-// --- Content Pages --- //
-function PrivacyPage() {
+// --- Overlay Modal for Popups --- //
+function RouteModal({ children, title }: { children: React.ReactNode, title: string }) {
+  const navigate = useNavigate();
+  const onClose = useCallback(() => navigate("/"), [navigate]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && (window as any).gtag) {
+      (window as any).gtag("config", (window as any).VITE_GA_MEASUREMENT_ID || 'G-TRACKING_ID', {
+        page_path: window.location.pathname,
+        page_title: title
+      });
+    }
+    document.title = `${title} | ZiptoGit`;
+    return () => { document.title = `Home | ZiptoGit`; };
+  }, [title]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   return (
-    <PageLayout title="Privacy Policy">
-      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-md p-8 sm:p-12 text-slate-700">
-        <h1 className="text-3xl font-bold text-slate-900 mb-6">Privacy Policy</h1>
-        <p className="mb-4">Last Updated: {new Date().toLocaleDateString()}</p>
-        <h2 className="text-xl font-semibold text-slate-900 mt-6 mb-3">1. Information We Collect</h2>
-        <p className="mb-4">ZiptoGit requests OAuth access to your GitHub account to push files directly to your repositories. We do not store your repository contents or your source code on our servers.</p>
-        <h2 className="text-xl font-semibold text-slate-900 mt-6 mb-3">2. How We Use Information</h2>
-        <p className="mb-4">Your GitHub token is stored securely in your browser's local storage and used solely to interface with the GitHub API on your behalf to perform ZIP extraction and commit operations.</p>
-        <h2 className="text-xl font-semibold text-slate-900 mt-6 mb-3">3. Third-Party Services</h2>
-        <p className="mb-4">We use Google Analytics to monitor usage and improve the tool. We do not sell your data.</p>
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200" 
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="relative w-full max-w-2xl max-h-full overflow-y-auto bg-white rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200">
+        <button 
+          onClick={onClose} 
+          className="absolute top-4 right-4 p-2 bg-slate-50 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-full transition-colors z-10"
+        >
+          <X className="w-5 h-5" />
+        </button>
+        {children}
       </div>
-    </PageLayout>
+    </div>
   );
 }
 
-function TermsPage() {
+// --- Content Pages --- //
+function PrivacyPage() {
   return (
-    <PageLayout title="Terms of Service">
-      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-md p-8 sm:p-12 text-slate-700">
-        <h1 className="text-3xl font-bold text-slate-900 mb-6">Terms of Service</h1>
-        <p className="mb-4">Welcome to ZiptoGit by Dipesh Nalawade!</p>
-        <h2 className="text-xl font-semibold text-slate-900 mt-6 mb-3">1. Acceptance of Terms</h2>
-        <p className="mb-4">By accessing or using our service, you agree to these Terms. If you do not agree, do not use the service.</p>
-        <h2 className="text-xl font-semibold text-slate-900 mt-6 mb-3">2. Responsible Use</h2>
-        <p className="mb-4">You are responsible for what you upload to your connected GitHub repositories. We are not liable for any code overrides, data loss, or unintended repository modifications.</p>
-        <h2 className="text-xl font-semibold text-slate-900 mt-6 mb-3">3. Disclaimer of Warranties</h2>
-        <p className="mb-4">ZiptoGit is provided "as is" without warranty of any kind. Use at your own risk.</p>
-      </div>
-    </PageLayout>
+    <div className="p-8 sm:p-12 text-slate-700">
+      <h1 className="text-3xl font-bold text-slate-900 mb-6">Privacy Policy</h1>
+      <p className="mb-4">Last Updated: {new Date().toLocaleDateString()}</p>
+      <h2 className="text-xl font-semibold text-slate-900 mt-6 mb-3">1. Information We Collect</h2>
+      <p className="mb-4">ZiptoGit requests OAuth access to your GitHub account to push files directly to your repositories. We do not store your repository contents or your source code on our servers.</p>
+      <h2 className="text-xl font-semibold text-slate-900 mt-6 mb-3">2. How We Use Information</h2>
+      <p className="mb-4">Your GitHub token is stored securely in your browser's local storage and used solely to interface with the GitHub API on your behalf to perform ZIP extraction and commit operations.</p>
+      <h2 className="text-xl font-semibold text-slate-900 mt-6 mb-3">3. Third-Party Services</h2>
+      <p className="mb-4">We use Google Analytics to monitor usage and improve the tool. We do not sell your data.</p>
+    </div>
   );
 }
 
 function ContactPage() {
   return (
-    <PageLayout title="Contact Us">
-      <div className="w-full max-w-xl bg-white rounded-2xl shadow-md p-8 sm:p-12 text-center text-slate-700">
-        <h1 className="text-3xl font-bold text-slate-900 mb-4">Contact</h1>
-        <p className="mb-8">Have a question, feedback, or need support? Reach out directly.</p>
-        
-        <img src="/social.png" alt="ZiptoGit App" className="w-full max-w-sm mx-auto h-auto rounded-xl shadow-sm border border-slate-100 mb-8" />
-        
-        <div className="inline-flex flex-col items-center gap-2 p-6 bg-slate-50 rounded-xl border border-slate-200">
-          <span className="text-sm font-semibold text-slate-500 uppercase tracking-widest">Support Email</span>
-          <a href="mailto:siteget1234@gmail.com" className="text-lg font-medium text-[#111827] hover:underline">siteget1234@gmail.com</a>
-        </div>
+    <div className="p-8 sm:p-12 text-center text-slate-700 flex flex-col items-center">
+      <h1 className="text-3xl font-bold text-slate-900 mb-4">Contact</h1>
+      <p className="mb-8">Have a question, feedback, or need support? Reach out directly.</p>
+      
+      <img src="https://res.cloudinary.com/dhxupweze/image/upload/v1781201096/social_ibkkyg.png" alt="ZiptoGit App" className="w-full max-w-sm h-auto rounded-xl shadow-sm border border-slate-100 mb-8" />
+      
+      <div className="inline-flex flex-col items-center gap-2 p-6 bg-slate-50 rounded-xl border border-slate-200 w-full max-w-xs">
+        <span className="text-sm font-semibold text-slate-500 uppercase tracking-widest">Support Email</span>
+        <a href="mailto:siteget1234@gmail.com" className="text-lg font-medium text-[#111827] hover:underline">siteget1234@gmail.com</a>
       </div>
-    </PageLayout>
+    </div>
   );
 }
 
 function HowItWorksPage() {
   return (
-    <PageLayout title="How It Works">
-      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-md p-8 sm:p-12 text-slate-700">
-        <h1 className="text-3xl font-bold text-slate-900 mb-6">How It Works</h1>
-        <div className="space-y-6">
-          <div className="flex gap-4">
-            <div className="w-8 h-8 rounded-full bg-[#111827] text-white flex items-center justify-center font-bold shrink-0">1</div>
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900">Connect GitHub</h3>
-              <p>Sign in with your GitHub account. This securely stores an OAuth token locally in your browser.</p>
-            </div>
+    <div className="p-8 sm:p-12 text-slate-700">
+      <h1 className="text-3xl font-bold text-slate-900 mb-6">How It Works</h1>
+      <div className="space-y-6">
+        <div className="flex gap-4">
+          <div className="w-8 h-8 rounded-full bg-[#111827] text-white flex items-center justify-center font-bold shrink-0">1</div>
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900">Connect GitHub</h3>
+            <p>Sign in with your GitHub account. This securely stores an OAuth token locally in your browser.</p>
           </div>
-          <div className="flex gap-4">
-            <div className="w-8 h-8 rounded-full bg-[#111827] text-white flex items-center justify-center font-bold shrink-0">2</div>
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900">Upload ZIP</h3>
-              <p>Drag and drop your AI Studio ZIP export. The files are securely unzipped in your browser—nothing is sent to our servers.</p>
-            </div>
+        </div>
+        <div className="flex gap-4">
+          <div className="w-8 h-8 rounded-full bg-[#111827] text-white flex items-center justify-center font-bold shrink-0">2</div>
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900">Upload ZIP</h3>
+            <p>Drag and drop your AI Studio ZIP export. The files are securely unzipped in your browserâ€”nothing is sent to our servers.</p>
           </div>
-          <div className="flex gap-4">
-            <div className="w-8 h-8 rounded-full bg-[#111827] text-white flex items-center justify-center font-bold shrink-0">3</div>
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900">Sync Directly</h3>
-              <p>We push the extracted files directly back into your selected repository using the GitHub API in one clean commit.</p>
-            </div>
+        </div>
+        <div className="flex gap-4">
+          <div className="w-8 h-8 rounded-full bg-[#111827] text-white flex items-center justify-center font-bold shrink-0">3</div>
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900">Sync Directly</h3>
+            <p>We push the extracted files directly back into your selected repository using the GitHub API in one clean commit.</p>
           </div>
         </div>
       </div>
-    </PageLayout>
-  );
-}
-
-function FAQPage() {
-  const faqs = [
-    { q: "Is my code secure?", a: "Yes. Your code never touches our servers. The ZIP extraction and standard GitHub API interactions happen entirely within your local browser runtime." },
-    { q: "What does ZiptoGit cost?", a: "It is currently completely free to use." },
-    { q: "Can I use it for private repositories?", a: "Yes. When you authenticate via OAuth, you grant the app access to read and commit to repositories you have permissions for." }
-  ];
-
-  return (
-    <PageLayout title="FAQ">
-      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-md p-8 sm:p-12">
-        <h1 className="text-3xl font-bold text-slate-900 mb-8 text-center">Frequently Asked Questions</h1>
-        <div className="space-y-4">
-          {faqs.map((faq, i) => (
-            <div key={i} className="p-5 border border-slate-200 rounded-xl bg-slate-50">
-              <h3 className="font-semibold text-slate-900 mb-2">{faq.q}</h3>
-              <p className="text-slate-600 text-[14.5px] leading-relaxed">{faq.a}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </PageLayout>
+    </div>
   );
 }
 
@@ -487,13 +482,14 @@ function FAQPage() {
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<PageLayout title="Home"><ZipUploader /></PageLayout>} />
-        <Route path="/how-it-works" element={<HowItWorksPage />} />
-        <Route path="/privacy" element={<PrivacyPage />} />
-        <Route path="/contact" element={<ContactPage />} />
-      </Routes>
+      <PageLayout title="Home">
+        <ZipUploader />
+        <Routes>
+          <Route path="/how-it-works" element={<RouteModal title="How It Works"><HowItWorksPage /></RouteModal>} />
+          <Route path="/privacy" element={<RouteModal title="Privacy Policy"><PrivacyPage /></RouteModal>} />
+          <Route path="/contact" element={<RouteModal title="Contact"><ContactPage /></RouteModal>} />
+        </Routes>
+      </PageLayout>
     </BrowserRouter>
   );
 }
-
